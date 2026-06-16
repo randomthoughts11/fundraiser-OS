@@ -15,13 +15,13 @@ export async function POST(request: NextRequest) {
     const data = onboardingSchema.parse(body);
 
     const founder = await prisma.founder.upsert({
-      where: { email: data.founderEmail },
+      where: { userId: auth.userId },
       create: {
         email: data.founderEmail,
         name: data.founderName,
         userId: auth.userId,
       },
-      update: { name: data.founderName, userId: auth.userId },
+      update: { name: data.founderName, email: data.founderEmail },
     });
 
     const company = await prisma.company.create({
