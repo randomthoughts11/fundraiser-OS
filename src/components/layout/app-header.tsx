@@ -22,7 +22,9 @@ function NavLink({
   pathname: string;
   exact?: boolean;
 }) {
-  const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  const active = exact
+    ? pathname === href
+    : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <Link
@@ -58,6 +60,7 @@ export function AppHeader() {
 
   const globalLinks = [
     { href: "/", label: "Home", exact: true },
+    { href: "/#pricing", label: "Pricing" },
     { href: "/onboarding", label: "New fundraise" },
     { href: "/admin", label: "Admin" },
   ];

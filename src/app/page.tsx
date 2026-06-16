@@ -126,6 +126,50 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section
+        id="pricing"
+        className="border-t border-zinc-200 bg-zinc-50 py-20 dark:border-zinc-800 dark:bg-zinc-950"
+      >
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-xl text-center">
+            <h2 className="text-2xl font-bold">Simple pricing</h2>
+            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+              One plan. Full platform access. No success fees or placement commissions.
+            </p>
+          </div>
+
+          <Card className="mx-auto mt-10 max-w-md border-zinc-900 dark:border-zinc-100">
+            <CardHeader className="text-center">
+              <p className="text-sm font-medium text-zinc-500">Fundraise OS</p>
+              <CardTitle className="text-3xl font-bold">
+                $599
+                <span className="text-base font-normal text-zinc-500"> / month</span>
+              </CardTitle>
+              <CardDescription>
+                For founders running an active pre-seed, seed, or Series A raise.
+              </CardDescription>
+            </CardHeader>
+            <ul className="mb-6 space-y-2 px-6 text-sm text-zinc-600 dark:text-zinc-400">
+              <li>Readiness scoring &amp; round strategy</li>
+              <li>Investor matching with fit × access scoring</li>
+              <li>Pipeline, outreach drafts &amp; compliance controls</li>
+              <li>Warm intro mapping &amp; source-backed signals</li>
+              <li>Unlimited fundraise profiles during your subscription</li>
+            </ul>
+            <div className="px-6 pb-6">
+              <Link href="/onboarding" className="block">
+                <Button size="lg" className="w-full">
+                  Get started
+                </Button>
+              </Link>
+              <p className="mt-3 text-center text-xs text-zinc-500">
+                Billed monthly. Cancel anytime. Software only — not a broker-dealer.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </section>
+
       <footer className="border-t border-zinc-200 py-8 dark:border-zinc-800">
         <p className="text-center text-xs text-zinc-500">
           Software that helps founders organize fundraising research, prepare materials,
