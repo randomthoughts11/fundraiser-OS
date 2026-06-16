@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -8,14 +9,28 @@ const isPublicRoute = createRouteMatcher([
   "/api/inngest(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  const authBypass =
-    process.env.AUTH_BYPASS_DEV === "true" && !process.env.CLERK_SECRET_KEY;
-  if (authBypass) return;
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+function clerkConfigured(): boolean {
+  return Boolean(
+    process.env.CLERK_SECRET_KEY?.trim() &&
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim(),
+  );
+}
+
+// Only load Clerk middleware when keys exist — otherwise Edge throws 500 on every request.
+const clerkAuthMiddleware = clerkConfigured()
+  ? clerkMiddleware(async (auth, request) => {
+      if (!isPublicRoute(request)) {
+        await auth.protect();
+      }
+    })
+  : null;
+
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
+  if (!clerkAuthMiddleware) {
+    return NextResponse.next();
   }
-});
+  return clerkAuthMiddleware(request, event);
+}
 
 export const config = {
   matcher: [
