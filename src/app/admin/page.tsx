@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 type IngestionStats = {
@@ -34,10 +33,7 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
-      <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-900">
-        ← Home
-      </Link>
-      <h1 className="mt-2 mb-6 text-2xl font-bold">Admin — Ingestion</h1>
+      <h1 className="mb-6 text-2xl font-bold">Admin — Ingestion</h1>
 
       {stats && (
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">

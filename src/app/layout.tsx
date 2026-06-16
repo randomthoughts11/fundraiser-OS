@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { AppHeader } from "@/components/layout/app-header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,7 +33,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <AuthProvider>
-          <PostHogProvider>{children}</PostHogProvider>
+          <PostHogProvider>
+            <AppHeader />
+            <main className="flex-1">{children}</main>
+          </PostHogProvider>
         </AuthProvider>
       </body>
     </html>

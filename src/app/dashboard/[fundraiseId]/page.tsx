@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { ReadinessReportCard } from "@/components/readiness/readiness-report";
 import { InvestorMatchCard } from "@/components/investors/investor-match-card";
 import { Button } from "@/components/ui/button";
@@ -87,19 +86,11 @@ export default function DashboardPage({
     <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-900">
-            ← Home
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">Fundraise command center</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Fundraise command center</h1>
         </div>
-        <div className="flex gap-2">
-          <Link href={`/dashboard/${fundraiseId}/pipeline`}>
-            <Button variant="outline">Pipeline</Button>
-          </Link>
-          <Button variant="outline" onClick={persistMatches}>
-            Refresh matches
-          </Button>
-        </div>
+        <Button variant="outline" onClick={persistMatches}>
+          Refresh matches
+        </Button>
       </div>
 
       {funnel && funnel.sent > 0 && (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { PipelineBoard, type PipelineItem } from "@/components/pipeline/pipeline-board";
 import type { PipelineStatus } from "@/generated/prisma/client";
 
@@ -50,23 +49,7 @@ export default function PipelinePage({
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <Link
-            href={`/dashboard/${fundraiseId}`}
-            className="text-sm text-zinc-500 hover:text-zinc-900"
-          >
-            ← Dashboard
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold">Pipeline</h1>
-        </div>
-        <Link
-          href={`/dashboard/${fundraiseId}/outreach`}
-          className="rounded-lg border px-4 py-2 text-sm"
-        >
-          Outreach drafts
-        </Link>
-      </div>
+      <h1 className="mb-6 text-2xl font-bold">Pipeline</h1>
       <PipelineBoard items={items} onStatusChange={handleStatusChange} onDraft={handleDraft} />
     </div>
   );

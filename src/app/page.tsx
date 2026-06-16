@@ -52,20 +52,6 @@ const features = [
 export default function HomePage() {
   return (
     <div className="flex-1">
-      <header className="border-b border-zinc-200 dark:border-zinc-800">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="text-lg font-semibold">Fundraise OS</span>
-          <nav className="flex items-center gap-4">
-            <Link href="/onboarding" className="text-sm text-zinc-600 hover:text-zinc-900">
-              Get started
-            </Link>
-            <Link href="/onboarding">
-              <Button>Start fundraise profile</Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="max-w-3xl">
           <p className="mb-4 text-sm font-medium text-zinc-500">

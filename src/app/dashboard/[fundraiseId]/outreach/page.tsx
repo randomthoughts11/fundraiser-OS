@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -53,13 +52,7 @@ export default function OutreachPage({
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
-      <Link
-        href={`/dashboard/${fundraiseId}/pipeline`}
-        className="text-sm text-zinc-500 hover:text-zinc-900"
-      >
-        ← Pipeline
-      </Link>
-      <h1 className="mt-2 mb-6 text-2xl font-bold">Outreach drafts</h1>
+      <h1 className="mb-6 text-2xl font-bold">Outreach drafts</h1>
 
       {messages.length === 0 ? (
         <p className="text-zinc-500">No drafts yet. Generate from the pipeline board.</p>
