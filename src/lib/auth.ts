@@ -11,7 +11,15 @@ export type AuthContext = {
   founderId?: string;
 };
 
-const DEV_BYPASS = process.env.AUTH_BYPASS_DEV === "true" && !process.env.CLERK_SECRET_KEY;
+function clerkConfigured(): boolean {
+  return Boolean(
+    process.env.CLERK_SECRET_KEY?.trim() &&
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim(),
+  );
+}
+
+// No Clerk keys → demo mode (works on Vercel without extra env vars).
+const DEV_BYPASS = !clerkConfigured() || process.env.AUTH_BYPASS_DEV === "true";
 
 export async function getAuthContext(): Promise<AuthContext | null> {
   if (DEV_BYPASS) {

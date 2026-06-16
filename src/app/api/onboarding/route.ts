@@ -95,10 +95,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (readinessReport.verdict !== "DO_NOT_RAISE_YET") {
-      await inngest.send({
-        name: "fundraise/generate-matches",
-        data: { fundraiseId: fundraise.id },
-      });
+      try {
+        await inngest.send({
+          name: "fundraise/generate-matches",
+          data: { fundraiseId: fundraise.id },
+        });
+      } catch (err) {
+        console.warn("Match generation job skipped (Inngest not configured):", err);
+      }
     }
 
     return {

@@ -10,6 +10,9 @@ export default defineConfig({
   },
   datasource: {
     // Prisma CLI (migrate/db push): prefer direct connection; generate needs no live DB
-    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
+    url:
+      process.env["DIRECT_URL"] ??
+      process.env["DATABASE_URL_UNPOOLED"] ??
+      process.env["DATABASE_URL"],
   },
 });
