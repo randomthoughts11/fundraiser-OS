@@ -1,0 +1,685 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum FundraiseMode {
+  PRE_MARKET_READY
+  MARKET_READY
+}
+
+enum Sector {
+  AI_INFRA
+  B2B_SAAS
+  FINTECH
+  CLIMATE
+  HEALTHCARE
+  DEVTOOLS
+  CYBERSECURITY
+  DEFENSE_TECH
+  CONSUMER
+  MARKETPLACE
+  DEEPTECH
+  BIOTECH
+  OTHER
+}
+
+enum CompanyStage {
+  IDEA
+  PRE_SEED
+  SEED
+  SERIES_A
+  SERIES_B_PLUS
+}
+
+enum RoundInstrument {
+  SAFE
+  PRICED_ROUND
+  CONVERTIBLE_NOTE
+  UNDECIDED
+}
+
+enum RegExemption {
+  RULE_506B
+  RULE_506C
+  REG_CF
+  UNDECIDED
+}
+
+enum ReadinessVerdict {
+  RAISE_NOW
+  RAISE_ANGELS_ONLY
+  RAISE_PRE_SEED
+  RAISE_SEED
+  DO_NOT_RAISE_YET
+  NEED_LEAD_FIRST
+  STRATEGIC_CAPITAL_FIT
+}
+
+enum InvestorType {
+  VC_FUND
+  ANGEL
+  OPERATOR_ANGEL
+  SCOUT
+  ACCELERATOR
+  FAMILY_OFFICE
+  SYNDICATE
+  STRATEGIC
+}
+
+enum InvestorBucket {
+  MUST_REACH
+  HIGH_FIT_LEAD
+  HIGH_FIT_ANGEL
+  GOOD_FOLLOW_ON
+  STRATEGIC
+  LOW_PRIORITY
+  DO_NOT_CONTACT
+}
+
+enum LeadFollowBehavior {
+  LEAD
+  FOLLOW
+  BOTH
+  UNKNOWN
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SENT
+  REPLIED
+  MEETING_BOOKED
+  PASSED
+  CLOSED
+}
+
+enum MessageStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SENT
+  BOUNCED
+  REPLIED
+}
+
+enum ReplySentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  PASS
+  MEETING_REQUEST
+}
+
+enum SourceType {
+  SEC_EDGAR
+  CRUNCHBASE
+  DEALROOM
+  NEWS
+  PORTFOLIO_PAGE
+  PARTNER_POST
+  LINKEDIN
+  USER_SUBMITTED
+  OTHER
+}
+
+enum ComplianceEventType {
+  MESSAGE_APPROVED
+  MESSAGE_SENT
+  OPT_OUT
+  SUPPRESSION_ADDED
+  REG_EXEMPTION_SET
+  LEGAL_FLAG
+  FOUNDER_ACKNOWLEDGMENT
+}
+
+enum UserRole {
+  FOUNDER
+  ADVISOR
+  ADMIN
+}
+
+enum PipelineStatus {
+  SHORTLISTED
+  DRAFT_READY
+  APPROVED
+  SENT
+  REPLIED
+  MEETING
+  PASSED
+}
+
+enum ExtractionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum IngestionJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  role      UserRole @default(FOUNDER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  founder          Founder?
+  oauthTokens      OAuthToken[]
+  advisorAccess    AdvisorCompanyAccess[] @relation("AdvisorAccess")
+  complianceLogs   ComplianceLog[]
+
+  @@index([clerkId])
+}
+
+model OAuthToken {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  scopes       String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+model AdvisorCompanyAccess {
+  id        String   @id @default(cuid())
+  advisorId String
+  companyId String
+  readOnly  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  advisor User @relation("AdvisorAccess", fields: [advisorId], references: [id], onDelete: Cascade)
+
+  @@unique([advisorId, companyId])
+}
+
+// ─── Founders & Companies ────────────────────────────────────────────────────
+
+model Founder {
+  id        String   @id @default(cuid())
+  userId    String?  @unique
+  email     String   @unique
+  name      String
+  title     String?
+  linkedIn  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?     @relation(fields: [userId], references: [id])
+  companies Company[]
+}
+
+model Company {
+  id               String         @id @default(cuid())
+  founderId        String
+  name             String
+  oneLiner         String?
+  description      String?
+  website          String?
+  sector           Sector
+  stage            CompanyStage
+  geography        String         @default("US")
+  fundraiseMode    FundraiseMode  @default(PRE_MARKET_READY)
+  competitors      String[]       @default([])
+  excludedInvestors String[]      @default([])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  founder     Founder      @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  fundraises  Fundraise[]
+  decks       Deck[]
+  metrics     Metric[]
+  contacts    Contact[]
+  campaigns   Campaign[]
+  warmPaths   WarmIntroPath[]
+  objections  Objection[]
+
+  @@index([founderId])
+  @@index([sector, stage])
+}
+
+model Fundraise {
+  id              String          @id @default(cuid())
+  companyId       String
+  targetAmount    Int
+  instrument      RoundInstrument @default(SAFE)
+  regExemption    RegExemption    @default(UNDECIDED)
+  targetCloseDate DateTime?
+  roundUnlocks    String?
+  priorOutreach   Json?
+  hasCounsel      Boolean         @default(false)
+  readinessScore  Float?
+  readinessVerdict ReadinessVerdict?
+  readinessReport Json?
+  narrative       String?
+  targetingStrategy Json?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+  matches   InvestorMatch[]
+
+  @@index([companyId])
+}
+
+model Deck {
+  id               String           @id @default(cuid())
+  companyId        String
+  fileName         String
+  fileUrl          String?
+  s3Key            String?
+  extractionStatus ExtractionStatus @default(PENDING)
+  extractedData    Json?
+  weakSlides       Json?
+  confirmedAt      DateTime?
+  uploadedAt       DateTime         @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model Metric {
+  id        String   @id @default(cuid())
+  companyId String
+  key       String
+  value     Float?
+  valueText String?
+  unit      String?
+  asOfDate  DateTime @default(now())
+  source    String?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, key])
+}
+
+// ─── Investor Graph ───────────────────────────────────────────────────────────
+
+model InvestorFirm {
+  id              String             @id @default(cuid())
+  name            String
+  slug            String?            @unique
+  normalizedName  String?
+  website         String?
+  geography       String[]           @default([])
+  stageFocus      CompanyStage[]     @default([])
+  sectorFocus     Sector[]           @default([])
+  checkSizeMin    Int?
+  checkSizeMax    Int?
+  leadBehavior    LeadFollowBehavior @default(UNKNOWN)
+  investorType    InvestorType       @default(VC_FUND)
+  publicThesis    String?
+  dryPowderProxy  Float?
+  lastActivityAt  DateTime?
+  dataConfidence  Float              @default(0.5)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  funds       Fund[]
+  partners    InvestorPerson[]
+  portfolio   PortfolioCompany[]
+  signals     InvestorSignal[]
+  theses      InvestorThesis[]
+  matches     InvestorMatch[]
+
+  thesisEmbedding Json?
+
+  @@index([name])
+  @@index([normalizedName])
+}
+
+model InvestorPerson {
+  id              String   @id @default(cuid())
+  firmId          String?
+  name            String
+  title           String?
+  email           String?
+  linkedIn        String?
+  geography       String?
+  stageFocus      CompanyStage[] @default([])
+  sectorFocus     Sector[]       @default([])
+  investsCold     Boolean        @default(false)
+  responsiveness  Float?
+  lastActivityAt  DateTime?
+  dataConfidence  Float          @default(0.5)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  firm      InvestorFirm? @relation(fields: [firmId], references: [id])
+  signals   InvestorSignal[]
+  matches   InvestorMatch[]
+  warmPaths WarmIntroPath[]
+
+  @@index([firmId])
+  @@index([name])
+}
+
+model Fund {
+  id         String   @id @default(cuid())
+  firmId     String
+  name       String
+  vintage    Int?
+  sizeUsd    Int?
+  createdAt  DateTime @default(now())
+
+  firm InvestorFirm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+}
+
+model PortfolioCompany {
+  id          String   @id @default(cuid())
+  firmId      String
+  name        String
+  sector      Sector?
+  stage       CompanyStage?
+  isConflict  Boolean  @default(false)
+  investedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  firm InvestorFirm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+}
+
+model InvestmentRound {
+  id          String        @id @default(cuid())
+  companyName String
+  amountUsd   Int?
+  stage       CompanyStage?
+  sector      Sector?
+  announcedAt DateTime?
+  leadInvestor String?
+  coInvestors  String[]     @default([])
+  sourceDocId  String?
+  createdAt   DateTime      @default(now())
+
+  sourceDoc SourceDocument? @relation(fields: [sourceDocId], references: [id])
+}
+
+model InvestorThesis {
+  id          String   @id @default(cuid())
+  firmId      String
+  summary     String
+  sectors     Sector[] @default([])
+  stages      CompanyStage[] @default([])
+  embedding   Json?
+  extractedAt DateTime @default(now())
+  sourceDocId String?
+
+  firm      InvestorFirm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  sourceDoc SourceDocument? @relation(fields: [sourceDocId], references: [id])
+
+  @@index([firmId])
+}
+
+model InvestorSignal {
+  id          String     @id @default(cuid())
+  firmId      String?
+  personId    String?
+  signalType  String
+  title       String
+  snippet     String?
+  sourceUrl   String?
+  sourceType  SourceType @default(OTHER)
+  confidence  Float      @default(0.7)
+  observedAt  DateTime   @default(now())
+  isStale     Boolean    @default(false)
+  sourceDocId String?
+
+  firm      InvestorFirm?    @relation(fields: [firmId], references: [id])
+  person    InvestorPerson?  @relation(fields: [personId], references: [id])
+  sourceDoc SourceDocument?  @relation(fields: [sourceDocId], references: [id])
+
+  @@index([firmId])
+  @@index([personId])
+  @@index([signalType, observedAt])
+}
+
+model SourceDocument {
+  id          String     @id @default(cuid())
+  url         String?
+  title       String?
+  sourceType  SourceType
+  fetchedAt   DateTime   @default(now())
+  contentHash String?
+  confidence  Float      @default(0.8)
+
+  signals  InvestorSignal[]
+  theses   InvestorThesis[]
+  rounds   InvestmentRound[]
+}
+
+// ─── Matching & Outreach ──────────────────────────────────────────────────────
+
+model InvestorMatch {
+  id                String         @id @default(cuid())
+  fundraiseId       String
+  firmId            String
+  personId          String?
+  fitScore          Float
+  accessScore       Float
+  timingScore       Float          @default(1.0)
+  confidenceScore   Float          @default(0.8)
+  conflictRisk      Float          @default(0)
+  priorityScore     Float
+  bucket            InvestorBucket
+  whyMatched        Json
+  whyNow            Json?
+  suggestedAngle    String?
+  bestContactPath   String?
+  potentialConcern  String?
+  pipelineStatus  PipelineStatus @default(SHORTLISTED)
+  pipelineNotes   String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  fundraise Fundraise       @relation(fields: [fundraiseId], references: [id], onDelete: Cascade)
+  firm      InvestorFirm    @relation(fields: [firmId], references: [id])
+  person    InvestorPerson? @relation(fields: [personId], references: [id])
+  messages  Message[]
+  outcomes  Outcome[]
+
+  @@unique([fundraiseId, firmId, personId])
+  @@index([fundraiseId, priorityScore])
+  @@index([bucket])
+}
+
+model Contact {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  email           String?
+  role            String?
+  relationship    String?
+  canIntro        Boolean  @default(false)
+  gdprLawfulBasis String?
+  employer        String?
+  createdAt       DateTime @default(now())
+
+  company   Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  warmPaths WarmIntroPath[]
+
+  @@index([companyId])
+}
+
+model WarmIntroPath {
+  id              String   @id @default(cuid())
+  companyId       String
+  contactId       String
+  targetPersonId  String
+  strength        Float
+  pathDescription String
+  bestRequester   String?
+  coldBetter      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contact      Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  targetPerson InvestorPerson @relation(fields: [targetPersonId], references: [id])
+
+  @@index([companyId])
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  companyId   String
+  fundraiseId String
+  name        String
+  status      CampaignStatus @default(DRAFT)
+  wave        Int            @default(1)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  fundraise Fundraise @relation(fields: [fundraiseId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@index([companyId])
+  @@index([fundraiseId])
+}
+
+model Message {
+  id              String        @id @default(cuid())
+  campaignId      String
+  matchId         String?
+  subject         String
+  body            String
+  status          MessageStatus @default(DRAFT)
+  personalization Json?
+  citations       Json?
+  complianceFlags Json?
+  founderApproved Boolean       @default(false)
+  approvedAt      DateTime?
+  sentAt          DateTime?
+  templateVersion String?
+  createdAt       DateTime      @default(now())
+
+  campaign Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  match    InvestorMatch? @relation(fields: [matchId], references: [id])
+  replies  Reply[]
+
+  @@index([campaignId])
+  @@index([matchId])
+}
+
+model Reply {
+  id         String         @id @default(cuid())
+  messageId  String
+  body       String
+  sentiment  ReplySentiment @default(NEUTRAL)
+  classified Json?
+  receivedAt DateTime       @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  matchId     String?
+  scheduledAt DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model Objection {
+  id          String   @id @default(cuid())
+  companyId   String
+  objection   String
+  response    String?
+  deckFix     String?
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model Outcome {
+  id              String   @id @default(cuid())
+  matchId         String
+  sent            Boolean  @default(false)
+  opened          Boolean?
+  replied         Boolean  @default(false)
+  positiveReply   Boolean  @default(false)
+  meetingBooked   Boolean  @default(false)
+  passed          Boolean  @default(false)
+  passReason      String?
+  checkSizeDiscussed Int?
+  notes           String?
+  recordedAt      DateTime @default(now())
+
+  match InvestorMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+}
+
+// ─── Compliance ───────────────────────────────────────────────────────────────
+
+model ComplianceLog {
+  id          String              @id @default(cuid())
+  companyId   String?
+  eventType   ComplianceEventType
+  details     Json
+  actorId     String?
+  createdAt   DateTime            @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([companyId, createdAt])
+}
+
+model MatchWeightSnapshot {
+  id         String   @id @default(cuid())
+  snapshotAt DateTime @default(now())
+  weights    Json
+  metadata   Json?
+}
+
+model IngestionJob {
+  id          String             @id @default(cuid())
+  jobType     String
+  status      IngestionJobStatus @default(PENDING)
+  startedAt   DateTime?
+  completedAt DateTime?
+  recordsProcessed Int           @default(0)
+  error       String?
+  metadata    Json?
+  createdAt   DateTime           @default(now())
+}
+
+model SuppressionList {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String?
+  addedAt   DateTime @default(now())
+}
